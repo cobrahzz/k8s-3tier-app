@@ -91,29 +91,6 @@ fi
 
 kubectl apply -f base/ingress/ingress.yaml
 
-## Ensure helm is installed
-if ! command -v helm &>/dev/null; then
-  echo "Installing helm..."
-  curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-fi
-
-## Prometheus + Grafana monitoring
-if ! helm repo list | grep -q prometheus-community; then
-  helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-  helm repo update
-fi
-
-for attempt in 1 2 3; do
-  helm upgrade --install kube-prom-stack prometheus-community/kube-prometheus-stack \
-    --namespace monitoring \
-    --create-namespace \
-    -f monitoring/values-kube-prometheus-stack.yaml \
-    --timeout 300s \
-    --wait && break
-  echo "helm attempt ${attempt} failed, retrying in 15s..."
-  sleep 15
-done
-
 ## ArgoCD GitOps
 ARGOCD_NS="argocd"
 if ! kubectl get namespace "${ARGOCD_NS}" &>/dev/null; then
@@ -141,12 +118,12 @@ kubectl rollout status deployment/argocd-server -n "${ARGOCD_NS}" --timeout=120s
 ## Apply ArgoCD ingress + Application manifests (triggers first sync from git)
 kubectl apply -f argocd/ingress.yaml
 kubectl apply -f argocd/webstore-app.yaml
-kubectl apply -f argocd/monitoring-app.yaml
 
 echo "Done. Checking pods:"
 kubectl get pods -n webstore
 echo ""
 echo "Access the webstore at: http://192.168.1.50"
-echo "Access Grafana at:      http://192.168.1.50/grafana  (admin / admin123)"
 echo "Access ArgoCD at:       http://192.168.1.50/argocd"
 echo "ArgoCD admin password:  $(kubectl get secret argocd-initial-admin-secret -n "${ARGOCD_NS}" -o jsonpath='{.data.password}' 2>/dev/null | base64 -d || echo '(secret not found - may already be deleted)')"
+echo ""
+echo "NOTE: Run monitoring-install.sh separately to install Prometheus + Grafana"

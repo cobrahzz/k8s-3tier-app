@@ -10,13 +10,6 @@ grafana:
 prometheus:
   prometheusSpec:
     retention: 10d
-    additionalScrapeConfigs:
-      - job_name: "webstore-backend"
-        static_configs:
-          - targets:
-              - "backend.webstore.svc.cluster.local:8000"
-        metrics_path: /api/health
-        scheme: http
 
 alertmanager:
   enabled: false

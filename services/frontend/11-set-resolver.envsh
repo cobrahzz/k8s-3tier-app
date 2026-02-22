@@ -1,0 +1,3 @@
+#!/bin/sh
+export NGINX_LOCAL_RESOLVERS="$(grep -E '^nameserver' /etc/resolv.conf | awk '{print $2}' | tr '\n' ' ')"
+echo "11-set-resolver.envsh: NGINX_LOCAL_RESOLVERS set to '${NGINX_LOCAL_RESOLVERS}'"

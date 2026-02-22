@@ -103,12 +103,16 @@ if ! helm repo list | grep -q prometheus-community; then
   helm repo update
 fi
 
-helm upgrade --install kube-prom-stack prometheus-community/kube-prometheus-stack \
-  --namespace monitoring \
-  --create-namespace \
-  -f monitoring/values-kube-prometheus-stack.yaml \
-  --timeout 120s \
-  --wait
+for attempt in 1 2 3; do
+  helm upgrade --install kube-prom-stack prometheus-community/kube-prometheus-stack \
+    --namespace monitoring \
+    --create-namespace \
+    -f monitoring/values-kube-prometheus-stack.yaml \
+    --timeout 300s \
+    --wait && break
+  echo "helm attempt ${attempt} failed, retrying in 15s..."
+  sleep 15
+done
 
 ## ArgoCD GitOps
 ARGOCD_NS="argocd"

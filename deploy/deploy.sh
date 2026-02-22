@@ -91,6 +91,12 @@ fi
 
 kubectl apply -f base/ingress/ingress.yaml
 
+## Ensure helm is installed
+if ! command -v helm &>/dev/null; then
+  echo "Installing helm..."
+  curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+fi
+
 ## Prometheus + Grafana monitoring
 if ! helm repo list | grep -q prometheus-community; then
   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts

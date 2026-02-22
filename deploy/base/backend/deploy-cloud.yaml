@@ -15,6 +15,8 @@ spec:
     spec:
       nodeSelector:
         topology.kubernetes.io/region: cloud
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: backend
           image: 238122922479.dkr.ecr.eu-west-3.amazonaws.com/k8sbackend:latest

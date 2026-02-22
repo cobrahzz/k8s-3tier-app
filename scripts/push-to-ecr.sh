@@ -31,3 +31,14 @@ docker push "${ECR_REGISTRY}/${ECR_BACKEND_REPO}:${IMAGE_TAG}"
 echo "Pushed:"
 echo "  ${ECR_REGISTRY}/${ECR_FRONTEND_REPO}:${IMAGE_TAG}"
 echo "  ${ECR_REGISTRY}/${ECR_BACKEND_REPO}:${IMAGE_TAG}"
+
+ECR_TOKEN=$(aws ecr get-login-password --region "${AWS_REGION}")
+kubectl create secret docker-registry ecr-secret \
+  --namespace webstore \
+  --docker-server="${ECR_REGISTRY}" \
+  --docker-username=AWS \
+  --docker-password="${ECR_TOKEN}" \
+  --save-config \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+echo "ECR pull secret refreshed in cluster."

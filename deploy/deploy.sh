@@ -16,7 +16,7 @@ fi
 
 kubectl apply -f base/namespaces.yaml
 
-if [[ -f ~/ecr-secret.env ]] && [[ ! -f "${SCRIPT_DIR}/ecr-secret.env" ]]; then
+if [[ -f ~/ecr-secret.env ]]; then
   mv ~/ecr-secret.env "${SCRIPT_DIR}/ecr-secret.env"
 fi
 

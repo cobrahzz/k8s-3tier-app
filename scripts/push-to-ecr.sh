@@ -54,3 +54,4 @@ if [[ -n "${CONTROL_PLANE_HOST}" ]]; then
 else
   echo "Tip: set CONTROL_PLANE_HOST in .env to auto-transfer the token to your control plane."
 fi
+

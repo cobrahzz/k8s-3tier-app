@@ -6,10 +6,28 @@ grafana:
     nodePort: 32000
   persistence:
     enabled: false
+  grafana.ini:
+    server:
+      root_url: "%(protocol)s://%(domain)s:%(http_port)s/grafana"
+      serve_from_sub_path: true
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    path: /grafana
+    pathType: Prefix
+    hosts:
+      - ""
 
 prometheus:
   prometheusSpec:
     retention: 10d
+    additionalScrapeConfigs:
+      - job_name: webstore-backend
+        static_configs:
+          - targets:
+              - backend.webstore.svc.cluster.local:8000
+        metrics_path: /api/health
+        scrape_interval: 30s
 
 alertmanager:
   enabled: false

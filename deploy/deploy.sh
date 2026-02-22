@@ -16,6 +16,25 @@ fi
 
 kubectl apply -f base/namespaces.yaml
 
+if [[ -f ~/ecr-secret.env ]] && [[ ! -f "${SCRIPT_DIR}/ecr-secret.env" ]]; then
+  mv ~/ecr-secret.env "${SCRIPT_DIR}/ecr-secret.env"
+fi
+
+if [[ -f "${SCRIPT_DIR}/ecr-secret.env" ]]; then
+  source "${SCRIPT_DIR}/ecr-secret.env"
+  kubectl create secret docker-registry ecr-secret \
+    --namespace webstore \
+    --docker-server="${ECR_REGISTRY}" \
+    --docker-username=AWS \
+    --docker-password="${ECR_TOKEN}" \
+    --save-config \
+    --dry-run=client -o yaml | kubectl apply -f -
+  echo "ECR pull secret refreshed."
+else
+  echo "Warning: deploy/ecr-secret.env not found. Skipping ECR secret creation."
+  echo "Run scripts/push-to-ecr.sh on your desktop first, then copy deploy/ecr-secret.env here."
+fi
+
 kubectl apply -f base/postgres/secret.yaml
 kubectl apply -f base/postgres/pvc.yaml
 kubectl apply -f base/postgres/statefulset.yaml

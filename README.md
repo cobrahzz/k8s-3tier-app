@@ -27,21 +27,27 @@ Kubernetes Ingress
 
 Monitoring (namespace: monitoring)
   └── kube-prometheus-stack (Helm)
-        ├── Prometheus  scrapes /api/health on backend
+        ├── Prometheus  node + cluster metrics (nodeExporter, kubeStateMetrics)
         └── Grafana     NodePort 32000
 ```
 
 ### Deployment topology
 
-Each application tier has two separate Kubernetes Deployments that share one Service:
-
-| Deployment | Replicas | Node affinity label |
+| Deployment | Replicas | Nodes |
 |---|---|---|
-| `frontend-onprem` | 2 | `topology.kubernetes.io/region=on-prem` |
-| `frontend-cloud` | 1 | `topology.kubernetes.io/region=cloud` |
-| `backend-onprem` | 2 | `topology.kubernetes.io/region=on-prem` |
-| `backend-cloud` | 1 | `topology.kubernetes.io/region=cloud` |
-| `postgres` (StatefulSet) | 1 | none |
+| `frontend-onsite` | 2 | worker1–4 (`topology.kubernetes.io/region=onsite`) |
+| `frontend-cloud` | 1 | worker5–6 (`topology.kubernetes.io/region=cloud`) |
+| `backend-onsite` | 2 | worker1–4 (`topology.kubernetes.io/region=onsite`) |
+| `backend-cloud` | 1 | worker5–6 (`topology.kubernetes.io/region=cloud`) |
+| `postgres` (StatefulSet) | 1 | any |
+
+### Resource limits per pod
+
+| Pod | RAM request | RAM limit | CPU request | CPU limit |
+|---|---|---|---|---|
+| Frontend (Nginx) | 32Mi | 128Mi | 50m | 200m |
+| Backend (FastAPI) | 128Mi | 256Mi | 100m | 500m |
+| Postgres | 256Mi | 512Mi | 250m | 500m |
 
 ---
 
@@ -69,6 +75,7 @@ k8s-3tier-app/
 │       └── app/
 │           └── main.py            All API endpoints + DB init + product seeding
 └── deploy/
+    ├── deploy.sh                  Deploys everything to the cluster in the correct order
     ├── base/
     │   ├── namespaces.yaml        webstore + monitoring namespaces
     │   ├── postgres/
@@ -79,17 +86,19 @@ k8s-3tier-app/
     │   ├── backend/
     │   │   ├── configmap.yaml     Non-secret env vars
     │   │   ├── service.yaml
-    │   │   ├── deploy-onprem.yaml 2 replicas, on-prem affinity
-    │   │   └── deploy-cloud.yaml  1 replica, cloud affinity
+    │   │   ├── deploy-onsite.yaml 2 replicas — worker1-4
+    │   │   └── deploy-cloud.yaml  1 replica  — worker5-6
     │   ├── frontend/
     │   │   ├── service.yaml
-    │   │   ├── deploy-onprem.yaml 2 replicas, on-prem affinity
-    │   │   └── deploy-cloud.yaml  1 replica, cloud affinity
+    │   │   ├── deploy-onsite.yaml 2 replicas — worker1-4
+    │   │   └── deploy-cloud.yaml  1 replica  — worker5-6
     │   └── ingress/
     │       └── ingress.yaml       nginx ingress class
     └── monitoring/
         └── values-kube-prometheus-stack.yaml
 ```
+
+> **Control plane:** only the `deploy/` folder is needed. Use sparse checkout to avoid cloning the full repo (see below).
 
 ---
 
@@ -134,28 +143,22 @@ Open [http://localhost](http://localhost). The frontend proxies `/api/` to the b
 
 There is no shared CI/CD pipeline. Each person builds and pushes images to **their own** AWS ECR using their own AWS credentials. Nothing is shared.
 
-### Prerequisites
-
-- [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) installed and configured
-- Docker running locally
-- Two ECR repositories created in your AWS account
-
-**Required ECR repositories:**
+**Requirements:** AWS CLI v2, Docker, two ECR repositories created in your account.
 
 | Repository | Image |
 |---|---|
 | your ECR frontend repo name | Nginx + static files |
 | your ECR backend repo name | FastAPI application |
 
-PostgreSQL uses the public `postgres:16-alpine` image from Docker Hub — no ECR repo needed.
+PostgreSQL uses `postgres:16-alpine` from Docker Hub — no ECR repo needed.
 
 ### Step 1 — Configure AWS CLI
 
 ```bash
-aws configure
+aws configure        # single profile
+# or
+export AWS_PROFILE=<your-profile-name>   # if you have multiple profiles
 ```
-
-Enter your `AWS Access Key ID`, `Secret Access Key`, and default region. This stores credentials locally in `~/.aws/credentials` — never in this repo.
 
 ### Step 2 — Fill in your .env
 
@@ -163,17 +166,7 @@ Enter your `AWS Access Key ID`, `Secret Access Key`, and default region. This st
 cp .env.example .env
 ```
 
-Then edit `.env`:
-
-```dotenv
-AWS_ACCOUNT_ID=123456789012
-AWS_REGION=eu-west-1
-ECR_FRONTEND_REPO=your-frontend-repo-name
-ECR_BACKEND_REPO=your-backend-repo-name
-IMAGE_TAG=latest
-```
-
-This file is git-ignored and never committed. Each person keeps their own copy with their own values.
+Edit `.env` with your values (account ID, region, repo names). This file is git-ignored and never committed.
 
 ### Step 3 — Run the script
 
@@ -181,9 +174,7 @@ This file is git-ignored and never committed. Each person keeps their own copy w
 bash scripts/push-to-ecr.sh
 ```
 
-The script reads `.env` automatically, authenticates to your ECR using the AWS CLI credentials already on your machine, then builds and pushes both images.
-
-You can also tag a specific release without editing `.env`:
+Tag a specific release without editing `.env`:
 
 ```bash
 IMAGE_TAG=v1.2.3 bash scripts/push-to-ecr.sh
@@ -193,33 +184,43 @@ IMAGE_TAG=v1.2.3 bash scripts/push-to-ecr.sh
 
 ## Kubernetes deployment
 
-Label your nodes before applying manifests:
+### On your desktop / any machine with full repo access
+
+Label your nodes once:
 
 ```bash
-kubectl label node <node-name> topology.kubernetes.io/region=on-prem
-kubectl label node <node-name> topology.kubernetes.io/region=cloud
+kubectl label node worker1 worker2 worker3 worker4 topology.kubernetes.io/region=onsite
+kubectl label node worker5 worker6 topology.kubernetes.io/region=cloud
 ```
 
-Update the `image:` fields in the four deployment files to point to your ECR URIs:
-
-```
-deploy/base/backend/deploy-onprem.yaml
-deploy/base/backend/deploy-cloud.yaml
-deploy/base/frontend/deploy-onprem.yaml
-deploy/base/frontend/deploy-cloud.yaml
-```
-
-Then apply:
+### On the control plane — sparse clone (deploy/ folder only)
 
 ```bash
-kubectl apply -R -f deploy/base/
+git clone --filter=blob:none --no-checkout <your-repo-url>
+cd k8s-3tier-app
+git sparse-checkout init --no-cone
+git sparse-checkout set deploy
+git checkout main
+```
+
+Then deploy everything in one command:
+
+```bash
+bash deploy/deploy.sh
+```
+
+The script applies all manifests in the correct dependency order and prints pod status at the end.
+
+To pull updates and redeploy:
+
+```bash
+git pull
+bash deploy/deploy.sh
 ```
 
 ---
 
 ## Monitoring
-
-Install the Prometheus + Grafana stack via Helm:
 
 ```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -230,4 +231,4 @@ helm upgrade --install kube-prom-stack prometheus-community/kube-prometheus-stac
   --values deploy/monitoring/values-kube-prometheus-stack.yaml
 ```
 
-Grafana is available on NodePort **32000** with username `admin` / password `admin123`.
+Grafana is available on NodePort **32000** — username `admin` / password `admin123`.

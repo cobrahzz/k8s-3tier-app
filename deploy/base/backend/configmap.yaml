@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: webstore
+data:
+  DB_HOST: postgres
+  DB_NAME: appdb
+  DB_USER: appuser

@@ -1,0 +1,208 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Arial, sans-serif;
+  background: #eaeded;
+  color: #111;
+  min-height: 100vh;
+}
+
+.navbar {
+  background: #131921;
+  color: #fff;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.navbar-brand {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #ff9900;
+  letter-spacing: -0.5px;
+}
+
+.navbar-tagline {
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+.layout {
+  display: flex;
+  gap: 20px;
+  padding: 20px 24px;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.account-box, .basket-box {
+  background: #fff;
+  border: 1px solid #d5d9d9;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.07);
+}
+
+.account-box h2, .basket-box h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.account-box input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #a6a6a6;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  outline: none;
+}
+
+.account-box input:focus {
+  border-color: #ff9900;
+  box-shadow: 0 0 0 2px #ff990033;
+}
+
+.account-box button {
+  width: 100%;
+  padding: 9px 0;
+  background: linear-gradient(to bottom, #f7dfa5, #f0c14b);
+  border: 1px solid #a88734;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.account-box button:hover { filter: brightness(0.96); }
+
+#account-status {
+  font-size: 0.82rem;
+  color: #555;
+  margin-top: 8px;
+  min-height: 18px;
+}
+
+#basket-items { font-size: 0.88rem; }
+
+.basket-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 4px;
+}
+
+.basket-item-name { flex: 1; }
+
+.basket-item-qty { color: #555; margin-right: 8px; white-space: nowrap; }
+
+.basket-item-price { font-weight: 600; white-space: nowrap; }
+
+.basket-total {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 10px 0;
+  text-align: right;
+}
+
+.checkout-btn {
+  width: 100%;
+  padding: 9px 0;
+  background: linear-gradient(to bottom, #f7ca5e, #e5a515);
+  border: 1px solid #c78e0f;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s;
+  margin-top: 8px;
+}
+
+.checkout-btn:hover:not(:disabled) { filter: brightness(0.96); }
+
+.checkout-btn:disabled { opacity: 0.5; cursor: default; }
+
+.checkout-msg {
+  margin-top: 10px;
+  padding: 8px;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+  color: #155724;
+  font-size: 0.88rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.hidden { display: none; }
+
+.product-area { flex: 1; }
+
+.product-area h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.product-card {
+  background: #fff;
+  border: 1px solid #d5d9d9;
+  border-radius: 8px;
+  padding: 20px 14px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: box-shadow 0.2s;
+}
+
+.product-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.13); }
+
+.product-emoji { font-size: 3rem; line-height: 1; }
+
+.product-name { font-weight: 600; font-size: 0.95rem; }
+
+.product-price { color: #B12704; font-weight: 700; font-size: 1.05rem; }
+
+.add-btn {
+  width: 100%;
+  padding: 7px 0;
+  background: linear-gradient(to bottom, #f7dfa5, #f0c14b);
+  border: 1px solid #a88734;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.add-btn:not(:disabled):hover { filter: brightness(0.95); }
+
+.add-btn:disabled { opacity: 0.45; cursor: default; }
+
+@media (max-width: 700px) {
+  .layout { flex-direction: column; }
+  .sidebar { width: 100%; }
+}

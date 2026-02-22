@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ShopK8s</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<nav class="navbar">
+  <div class="navbar-brand">ShopK8s</div>
+  <div class="navbar-tagline">Everything, delivered.</div>
+</nav>
+<div class="layout">
+  <aside class="sidebar">
+    <section class="account-box">
+      <h2>Account</h2>
+      <input id="username-input" type="text" placeholder="Username" />
+      <button id="switch-btn">Switch / Create account</button>
+      <p id="account-status"></p>
+    </section>
+    <section class="basket-box">
+      <h2>Basket</h2>
+      <div id="basket-items"></div>
+      <div id="basket-total" class="basket-total"></div>
+      <button id="checkout-btn" class="checkout-btn" disabled>Buy</button>
+      <div id="checkout-msg" class="checkout-msg hidden">Command validated</div>
+    </section>
+  </aside>
+  <main class="product-area">
+    <h2>Products</h2>
+    <div id="product-grid" class="product-grid"></div>
+  </main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
